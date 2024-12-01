@@ -1,5 +1,8 @@
 # Projeto de Blockchain
 
+## Como rodar a aplicação Blockchain: https://youtu.be/3NGgofHuYI0?si=O14lIvQpiTDQjt1h
+## Explicação Blockchain: https://youtu.be/A9RpqFeFdR8?si=VhmrfNkpbAlbAePl
+
 ## Iniciar a Blockchain
 1. Acesse o diretório da rede de teste:
    ```bash
