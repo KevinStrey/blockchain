@@ -1,18 +1,28 @@
-#Projeto de Blockchain
+# Projeto de Blockchain
 
-#Iniciar blockchain
-cd fabric-samples/test-network
-./network.sh down
-./network.sh up createChannel -c mychannel -ca
-./network.sh deployCC -ccn basic -ccp ../asset-transfer-basic/chaincode-javascript/ -ccl javascript
+## Iniciar a Blockchain
+1. Acesse o diretório da rede de teste:
+   ```bash
+   cd fabric-samples/test-network
+   ./network.sh down
+   ./network.sh up createChannel -c mychannel -ca
+   ./network.sh deployCC -ccn basic -ccp ../asset-transfer-basic/chaincode-javascript/ -ccl javascript
+   ```
 
-#VScode:
-#Abrir a pasta hyperledger/fabric-samples/asset-transfer-basic/application-javascript
-#Abrir o terminal do VScode
-sudo su
-npm install
-npm install express
-node app.js
+## Configuração no VSCode:
+2. Abrir a pasta 
+```bash
+hyperledger/fabric-samples/asset-transfer-basic/application-javascript
+```
 
-#Sempre que terminar de usar a blockchain use o ./network.sh down dentro do terminal da pasta BlockChainRedes 
-#No terminal do VScode use o comando: rm -rf wallet
+3. Abrir o terminal do VScode
+  ```bash
+  sudo su
+  npm install
+  npm install express
+  node app.js
+  ```
+
+
+4. Sempre que terminar de usar a blockchain use o ```bash./network.sh down``` dentro do terminal da pasta BlockChainRedes 
+5. No terminal do VScode use o comando: ```rm -rf wallet```
