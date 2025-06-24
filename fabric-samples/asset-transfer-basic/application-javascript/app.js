@@ -7,6 +7,9 @@
 'use strict';
 
 const express = require('express');
+const evidenceDB = require('./evidenceDB');
+const multer = require('multer');
+const crypto = require('crypto');
 
 const { Gateway, Wallets } = require('fabric-network');
 const FabricCAServices = require('fabric-ca-client');
@@ -25,8 +28,12 @@ const mspOrg1 = 'Org1MSP';
 const walletPath = path.join(__dirname, 'wallet');
 const org1UserId = 'javascriptAppUser3';
 
+const upload = multer();
+
 app.use(express.static('public'));
 app.use(express.json());
+
+evidenceDB.initDB();
 
 //comunicacao da servidor com a blockchain
 async function getGateway() {
@@ -171,6 +178,47 @@ app.post('/api/asset/transfer-custodia', async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: error.toString() });
     }
+});
+
+// Rota para upload de evidência
+app.post('/api/evidence/upload', upload.single('file'), (req, res) => {
+    const { assetId } = req.body;
+    const file = req.file;
+    if (!assetId || !file) {
+        return res.status(400).json({ error: 'assetId e arquivo são obrigatórios.' });
+    }
+    // Gera hash do arquivo
+    const hash = crypto.createHash('sha256').update(file.buffer).digest('hex');
+    evidenceDB.insertEvidence(assetId, file.originalname, file.mimetype, file.buffer, hash, (err, id) => {
+        if (err) {
+            return res.status(500).json({ error: 'Erro ao salvar evidência.' });
+        }
+        res.status(200).json({ message: 'Evidência salva com sucesso.', id, hash });
+    });
+});
+
+// Rota para listar evidências de um asset
+app.get('/api/evidence/:assetId', (req, res) => {
+    const { assetId } = req.params;
+    evidenceDB.getEvidencesByAsset(assetId, (err, evidences) => {
+        if (err) {
+            return res.status(500).json({ error: 'Erro ao buscar evidências.' });
+        }
+        res.status(200).json(evidences);
+    });
+});
+
+// Rota para download de evidência por id
+app.get('/api/evidence/file/:id', (req, res) => {
+    const { id } = req.params;
+    evidenceDB.getEvidenceFileById(id, (err, file) => {
+        if (err || !file) {
+            return res.status(404).json({ error: 'Arquivo não encontrado.' });
+        }
+        res.setHeader('Content-Disposition', `attachment; filename="${file.filename}"`);
+        res.setHeader('Content-Type', file.mimetype);
+        res.send(file.data);
+    });
 });
 
 /*app.listen(port, () => {

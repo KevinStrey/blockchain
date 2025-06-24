@@ -107,6 +107,27 @@
       <button id="list-custodia">Listar Custódia</button>
       <ul id="custodia-list"></ul>
     </div>
+
+    <!-- Upload de Evidência -->
+    <div class="section">
+      <h2>Upload de Evidência</h2>
+      <form id="evidence-upload-form" enctype="multipart/form-data">
+        <input type="text" id="evidence-asset-id" placeholder="ID do Ativo" required>
+        <input type="file" id="evidence-file" required>
+        <button type="submit">Enviar Evidência</button>
+      </form>
+      <p id="evidence-upload-result"></p>
+    </div>
+
+    <!-- Listar Evidências de um Ativo -->
+    <div class="section">
+      <h2>Listar Evidências de um Ativo</h2>
+      <form id="evidence-list-form">
+        <input type="text" id="evidence-list-asset-id" placeholder="ID do Ativo" required>
+        <button type="submit">Listar Evidências</button>
+      </form>
+      <ul id="evidence-list"></ul>
+    </div>
   </div>
 
   <script>
@@ -211,6 +232,46 @@
 
     document.getElementById('list-all').addEventListener('click', fetchAssets);
     document.getElementById('list-custodia').addEventListener('click', fetchCustodia);
+
+    // --- EVIDÊNCIAS ---
+    document.getElementById('evidence-upload-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const assetId = document.getElementById('evidence-asset-id').value;
+      const fileInput = document.getElementById('evidence-file');
+      const file = fileInput.files[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append('assetId', assetId);
+      formData.append('file', file);
+      const response = await fetch('/api/evidence/upload', {
+        method: 'POST',
+        body: formData
+      });
+      if (response.ok) {
+        document.getElementById('evidence-upload-result').textContent = 'Evidência enviada com sucesso!';
+        fileInput.value = '';
+      } else {
+        document.getElementById('evidence-upload-result').textContent = 'Falha ao enviar evidência.';
+      }
+    });
+
+    document.getElementById('evidence-list-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const assetId = document.getElementById('evidence-list-asset-id').value;
+      const response = await fetch(`/api/evidence/${assetId}`);
+      const evidences = await response.json();
+      const evidenceList = document.getElementById('evidence-list');
+      evidenceList.innerHTML = '';
+      if (evidences.length === 0) {
+        evidenceList.innerHTML = '<li>Nenhuma evidência encontrada.</li>';
+        return;
+      }
+      evidences.forEach(ev => {
+        const li = document.createElement('li');
+        li.innerHTML = `Arquivo: <b>${ev.filename}</b> | Hash: <code>${ev.hash}</code> | <a href="/api/evidence/file/${ev.id}" target="_blank">Download</a> | Data: ${ev.createdAt}`;
+        evidenceList.appendChild(li);
+      });
+    });
 
     fetchAssets();
   </script>
