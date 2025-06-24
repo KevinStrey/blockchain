@@ -18,45 +18,105 @@ class AssetTransfer extends Contract {
         const assets = [
             {
                 id: 'item1',
-                description: 'Amostra de Sangue',
-                quantity: 1,
+                evidenceType: '🧬 Biológica',
+                description: 'Amostra de sangue coletada na cena do crime',
+                collectionLocation: 'Sala de estar - Rua das Flores, 123',
+                collectionDatetime: '2024-01-15T11:30:00-03:00',
+                collectorAgent: 'Perito Leandro (ID 001)',
+                evidenceCondition: 'Íntegra',
+                storageLocation: '🧊 Geladeira Forense',
+                evidenceStatus: 'Em análise',
+                sealNumber: 'SEAL001',
+                sealType: 'Plástico',
+                sealState: 'Íntegro',
+                additionalNotes: 'Amostra coletada com luvas estéreis',
                 custodian: 'Dr.ª Souza',
-                value: 300,
+                evidenceHashes: [],
             },
             {
                 id: 'item2',
-                description: 'Impressão digital',
-                quantity: 1,
+                evidenceType: '🖐️ Impressão digital',
+                description: 'Impressão digital encontrada na janela',
+                collectionLocation: 'Janela lateral - Rua das Flores, 123',
+                collectionDatetime: '2024-01-15T12:45:00-03:00',
+                collectorAgent: 'Oficial Silva (ID 006)',
+                evidenceCondition: 'Íntegra',
+                storageLocation: '🏢 Depósito Central',
+                evidenceStatus: 'Arquivada',
+                sealNumber: 'SEAL002',
+                sealType: 'Adesivo',
+                sealState: 'Íntegro',
+                additionalNotes: 'Coletada com fita adesiva especial',
                 custodian: 'Oficial Silva',
-                value: 400,
+                evidenceHashes: [],
             },
             {
                 id: 'item3',
-                description: 'DNA',
-                quantity: 2,
+                evidenceType: '🧬 DNA',
+                description: 'Amostra de DNA extraída de cabelo',
+                collectionLocation: 'Quarto principal - Rua das Flores, 123',
+                collectionDatetime: '2024-01-15T13:20:00-03:00',
+                collectorAgent: 'Perito Gerson (ID 002)',
+                evidenceCondition: 'Íntegra',
+                storageLocation: '🧪 Laboratório de Biologia',
+                evidenceStatus: 'Em análise',
+                sealNumber: 'SEAL003',
+                sealType: 'Numerado',
+                sealState: 'Íntegro',
+                additionalNotes: 'Amostra enviada para análise genética',
                 custodian: 'Técnico Lima',
-                value: 500,
+                evidenceHashes: [],
             },
             {
                 id: 'item4',
-                description: 'Arma de fogo',
-                quantity: 1,
+                evidenceType: '🔫 Balística',
+                description: 'Arma de fogo apreendida no local',
+                collectionLocation: 'Cozinha - Rua das Flores, 123',
+                collectionDatetime: '2024-01-15T14:10:00-03:00',
+                collectorAgent: 'Agente Primm (ID 004)',
+                evidenceCondition: 'Íntegra',
+                storageLocation: '🔒 Cofre',
+                evidenceStatus: 'Arquivada',
+                sealNumber: 'SEAL004',
+                sealType: 'Metálico',
+                sealState: 'Íntegro',
+                additionalNotes: 'Arma descarregada e lacrada',
                 custodian: 'Detetive Souza',
-                value: 650,
+                evidenceHashes: [],
             },
             {
                 id: 'item5',
-                description: 'Vídeo de vigilância',
-                quantity: 1,
+                evidenceType: '📷 Imagem/Vídeo',
+                description: 'Vídeo de vigilância da cena do crime',
+                collectionLocation: 'Sistema de CFTV - Rua das Flores, 123',
+                collectionDatetime: '2024-01-15T15:00:00-03:00',
+                collectorAgent: 'Agente Luiz (ID 005)',
+                evidenceCondition: 'Íntegra',
+                storageLocation: '💻 Laboratório de Digital',
+                evidenceStatus: 'Em análise',
+                sealNumber: 'SEAL005',
+                sealType: 'RFID',
+                sealState: 'Íntegro',
+                additionalNotes: 'Backup realizado em múltiplos dispositivos',
                 custodian: 'Agente Dumes',
-                value: 700,
+                evidenceHashes: [],
             },
             {
                 id: 'item6',
-                description: 'Documento',
-                quantity: 3,
+                evidenceType: '📄 Documental',
+                description: 'Documentos encontrados na cena',
+                collectionLocation: 'Escritório - Rua das Flores, 123',
+                collectionDatetime: '2024-01-15T16:30:00-03:00',
+                collectorAgent: 'Perito Maurício (ID 003)',
+                evidenceCondition: 'Íntegra',
+                storageLocation: '📦 Arquivo Morto',
+                evidenceStatus: 'Arquivada',
+                sealNumber: 'SEAL006',
+                sealType: 'Barra de segurança',
+                sealState: 'Íntegro',
+                additionalNotes: 'Documentos digitalizados e originais preservados',
                 custodian: 'Analista Figueira',
-                value: 800,
+                evidenceHashes: [],
             },
         ];
 
@@ -67,8 +127,8 @@ class AssetTransfer extends Contract {
         }
     }
 
-    // Adiciona um novo ativo ao ledger.
-    async AddItem(ctx, id, description, quantity, custodian, value) {
+    // Adiciona um novo ativo ao ledger com o novo modelo de evidência.
+    async AddItem(ctx, id, evidenceType, description, collectionLocation, collectionDatetime, collectorAgent, evidenceCondition, storageLocation, evidenceStatus, sealNumber, sealType, sealState, additionalNotes) {
         const exists = await this.itemExists(ctx, id);
         if (exists) {
             throw new Error(`Item ${id} already exists`);
@@ -76,15 +136,24 @@ class AssetTransfer extends Contract {
 
         const asset = {
             id,
+            evidenceType,
             description,
-            quantity,
-            custodian,
-            value,
+            collectionLocation,
+            collectionDatetime,
+            collectorAgent,
+            evidenceCondition,
+            storageLocation,
+            evidenceStatus,
+            sealNumber,
+            sealType,
+            sealState,
+            additionalNotes,
+            custodian: collectorAgent, // O custodiante inicial é o agente coletor
             evidenceHashes: [],
         };
 
         await ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(asset))));
-        await this.createTransferRecord(ctx, id, custodian, 'AddItem');
+        await this.createTransferRecord(ctx, id, collectorAgent, 'AddItem');
         return JSON.stringify(asset);
     }
 
@@ -155,7 +224,11 @@ class AssetTransfer extends Contract {
 
     // Cria um novo registro de transferência quando a custódia de um ativo é transferida.
     async createTransferRecord(ctx, itemId, newCustodian, transactionType) {
-        const timestamp = new Date((await ctx.stub.getTxTimestamp()).seconds.low * 1000).toISOString();
+        // Converte o timestamp para UTC-3 (horário de Brasília)
+        const utcTimestamp = (await ctx.stub.getTxTimestamp()).seconds.low * 1000;
+        const brasiliaDate = new Date(utcTimestamp - (3 * 60 * 60 * 1000)); // Subtrai 3 horas para UTC-3
+        const timestamp = brasiliaDate.toISOString();
+        
         const transferRecord = {
             itemId,
             custodian: newCustodian,

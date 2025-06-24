@@ -37,9 +37,27 @@ function getEvidenceFileById(id, callback) {
     db.get('SELECT filename, mimetype, data FROM evidences WHERE id = ?', [id], callback);
 }
 
+// Busca evidências por ID (assetId)
+function getEvidencesById(assetId, callback) {
+    db.all('SELECT id, filename, mimetype, hash, createdAt FROM evidences WHERE assetId = ? ORDER BY createdAt DESC', [assetId], callback);
+}
+
+// Lista todas as evidências
+function getAllEvidences(callback) {
+    db.all('SELECT id, assetId, filename, mimetype, hash, createdAt FROM evidences ORDER BY createdAt DESC', callback);
+}
+
+// Busca evidências por ID exato
+function getEvidenceById(id, callback) {
+    db.get('SELECT id, assetId, filename, mimetype, hash, createdAt FROM evidences WHERE id = ?', [id], callback);
+}
+
 module.exports = {
     initDB,
     insertEvidence,
     getEvidencesByAsset,
-    getEvidenceFileById
+    getEvidenceFileById,
+    getEvidencesById,
+    getAllEvidences,
+    getEvidenceById
 }; 

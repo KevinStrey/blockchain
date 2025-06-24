@@ -93,14 +93,28 @@ async function readAsset(id) {
 }
 
 async function addAsset(item) {
-	const { itemId, description, quantity, custodian, value } = item;
+	const { 
+		itemId, 
+		evidenceType, 
+		description, 
+		collectionLocation, 
+		collectionDatetime, 
+		collectorAgent, 
+		evidenceCondition, 
+		storageLocation, 
+		evidenceStatus, 
+		sealNumber, 
+		sealType, 
+		sealState, 
+		additionalNotes 
+	} = item;
 
 	try {
 		const gateway = await getGateway();
 		const network = await gateway.getNetwork(channelName);
 		const contract = network.getContract(chaincodeName);
 
-		const result = await contract.submitTransaction('AddItem', itemId, description, quantity, custodian, value);
+		const result = await contract.submitTransaction('AddItem', itemId, evidenceType, description, collectionLocation, collectionDatetime, collectorAgent, evidenceCondition, storageLocation, evidenceStatus, sealNumber, sealType, sealState, additionalNotes);
 		return JSON.parse(result.toString());
 	} catch (error) {
 		console.error(`Failed to evaluate transaction: ${error}`);
@@ -158,13 +172,50 @@ app.get('/api/asset/:id', async (req, res) => {
 
 // Endpoint para adicionar um novo asset
 app.post('/api/asset/transfer', async (req, res) => {
-	const { itemId, description, quantity, custodian, value } = req.body;
+	const {
+		itemId,
+		evidenceType,
+		description,
+		collectionLocation,
+		collectionDatetime,
+		collectorAgent,
+		evidenceCondition,
+		storageLocation,
+		evidenceStatus,
+		sealNumber,
+		sealType,
+		sealState,
+		additionalNotes
+	} = req.body;
+
+	// Validação simples dos campos obrigatórios
+	if (!itemId || !evidenceType || !description || !collectionLocation || !collectionDatetime || !collectorAgent || !evidenceCondition || !storageLocation || !evidenceStatus) {
+		return res.status(400).json({ error: 'Preencha todos os campos obrigatórios.' });
+	}
 
 	try {
-		const result = await addAsset({ itemId, description, quantity, custodian, value });
-		res.status(200).json(result);
+		const result = await addAsset({
+			itemId,
+			evidenceType,
+			description,
+			collectionLocation,
+			collectionDatetime,
+			collectorAgent,
+			evidenceCondition,
+			storageLocation,
+			evidenceStatus,
+			sealNumber,
+			sealType,
+			sealState,
+			additionalNotes
+		});
+		
+		return res.status(200).json({
+			message: '✅ Evidência adicionada com sucesso na blockchain!',
+			item: result
+		});
 	} catch (error) {
-		res.status(500).json({ error: error.toString() });
+		return res.status(500).json({ error: '❌ Erro ao adicionar evidência: ' + error.toString() });
 	}
 });
 
@@ -270,6 +321,41 @@ app.get('/api/integrity/:assetId', async (req, res) => {
     });
 });
 
+// Endpoint para buscar evidências por ID (assetId)
+app.get('/api/evidence/search/:assetId', (req, res) => {
+    const { assetId } = req.params;
+    evidenceDB.getEvidencesById(assetId, (err, evidences) => {
+        if (err) {
+            return res.status(500).json({ error: 'Erro ao buscar evidências.' });
+        }
+        res.status(200).json(evidences);
+    });
+});
+
+// Endpoint para listar todas as evidências
+app.get('/api/evidence', (req, res) => {
+    evidenceDB.getAllEvidences((err, evidences) => {
+        if (err) {
+            return res.status(500).json({ error: 'Erro ao listar evidências.' });
+        }
+        res.status(200).json(evidences);
+    });
+});
+
+// Endpoint para buscar evidência por ID específico
+app.get('/api/evidence/id/:id', (req, res) => {
+    const { id } = req.params;
+    evidenceDB.getEvidenceById(id, (err, evidence) => {
+        if (err) {
+            return res.status(500).json({ error: 'Erro ao buscar evidência.' });
+        }
+        if (!evidence) {
+            return res.status(404).json({ error: 'Evidência não encontrada.' });
+        }
+        res.status(200).json(evidence);
+    });
+});
+
 /*app.listen(port, () => {
     console.log(`App listening at http://localhost:${port}`);
 });*/
@@ -342,5 +428,4 @@ async function main() {
 }
 
 
-//main();
-
+main();

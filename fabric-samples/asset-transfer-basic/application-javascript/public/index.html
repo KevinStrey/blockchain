@@ -12,7 +12,7 @@
       padding: 0;
     }
     .container {
-      max-width: 1000px;
+      max-width: 1250px;
       margin: 32px auto;
       background: #fff;
       padding: 32px 28px 28px 28px;
@@ -342,14 +342,65 @@
       gap: 6px;
     }
     .integrity-blockchain-hashes {
-      background: #eaf2ff;
+      background: #f0f8ff;
+      border: 1px solid #007BFF;
       border-radius: 6px;
-      padding: 10px 14px;
-      margin-top: 10px;
-      font-size: 0.98rem;
-      color: #007BFF;
+      padding: 12px;
+      margin-top: 12px;
       font-family: 'Fira Mono', 'Consolas', monospace;
+      font-size: 0.9rem;
+    }
+    .integrity-blockchain-hashes div {
+      margin: 4px 0;
       word-break: break-all;
+    }
+    .download-btn {
+      background-color: #28a745;
+      color: white;
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      display: inline-block;
+      transition: background 0.2s;
+    }
+    .download-btn:hover {
+      background-color: #218838;
+    }
+    .table-container {
+      margin-top: 16px;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      background: white;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #e9ecef;
+    }
+    th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+      color: #495057;
+      font-size: 0.95rem;
+    }
+    td {
+      font-size: 0.9rem;
+      color: #212529;
+    }
+    tr:hover {
+      background-color: #f8f9fa;
+    }
+    .custody-table-container {
+      margin-top: 16px;
+      overflow-x: auto;
     }
     #evidence-upload-form {
       display: flex;
@@ -512,10 +563,13 @@
             <thead>
               <tr>
                 <th>ID</th>
+                <th>Tipo</th>
                 <th>Descrição</th>
-                <th>Quantidade</th>
+                <th>Local de Coleta</th>
+                <th>Data/Hora</th>
+                <th>Agente</th>
+                <th>Status</th>
                 <th>Responsável</th>
-                <th>Valor</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -532,10 +586,13 @@
             <thead>
               <tr>
                 <th>ID</th>
+                <th>Tipo</th>
                 <th>Descrição</th>
-                <th>Quantidade</th>
+                <th>Local de Coleta</th>
+                <th>Data/Hora</th>
+                <th>Agente</th>
+                <th>Status</th>
                 <th>Responsável</th>
-                <th>Valor</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -588,6 +645,28 @@
     </div>
     <div id="tab-evidencias" class="tab-content">
       <div class="section">
+        <h2>Listar Todas as Evidências</h2>
+        <button id="list-all-evidence">Listar Todas</button>
+        <div class="table-container">
+          <table id="all-evidence-table" style="display:none;">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Asset ID</th>
+                <th>Nome do Arquivo</th>
+                <th>Tipo</th>
+                <th>Hash</th>
+                <th>Data de Criação</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p id="all-evidence-result"></p>
+      </div>
+
+      <div class="section">
         <h2>Listar Evidências de um Ativo</h2>
         <form id="evidence-list-form">
           <input type="text" id="evidence-list-asset-id" placeholder="ID do Ativo" required>
@@ -625,10 +704,13 @@
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td>${asset.id}</td>
-            <td>${asset.description}</td>
-            <td>${asset.quantity}</td>
-            <td>${asset.custodian}</td>
-            <td>${asset.value}</td>
+            <td>${asset.evidenceType || asset.type || 'N/A'}</td>
+            <td>${asset.description || 'N/A'}</td>
+            <td>${asset.collectionLocation || 'N/A'}</td>
+            <td>${asset.collectionDatetime ? new Date(asset.collectionDatetime).toLocaleString() : (asset.collectionDateTime ? new Date(asset.collectionDateTime).toLocaleString() : 'N/A')}</td>
+            <td>${asset.collectorAgent || 'N/A'}</td>
+            <td>${asset.evidenceStatus || asset.status || 'N/A'}</td>
+            <td>${asset.custodian || 'N/A'}</td>
           `;
           tbody.appendChild(tr);
         });
@@ -675,17 +757,7 @@
       }
     });
 
-    async function fetchAssetById(itemId) {
-        const response = await fetch(`/api/asset/${itemId}`);
-        if (response.ok) {
-            const asset = await response.json();
-            document.getElementById('search-result').textContent = `${asset.id}: ${asset.description} - ${asset.quantity} - ${asset.custodian} - ${asset.value}`;
-        } else {
-            document.getElementById('search-result').textContent = 'Item não encontrado';
-        }
-    }
-
-    async function addAsset(itemId, description, quantity, custodian, value) {
+    async function addAsset(itemId, evidenceType, description, collectionLocation, collectionDatetime, collectorAgent, evidenceCondition, storageLocation, evidenceStatus, sealNumber, sealType, sealState, additionalNotes) {
         const response = await fetch('/api/asset/transfer', {
             method: 'POST',
             headers: {
@@ -693,10 +765,18 @@
             },
             body: JSON.stringify({
                 itemId,
+                evidenceType,
                 description,
-                quantity,
-                custodian,
-                value
+                collectionLocation,
+                collectionDatetime,
+                collectorAgent,
+                evidenceCondition,
+                storageLocation,
+                evidenceStatus,
+                sealNumber,
+                sealType,
+                sealState,
+                additionalNotes
             }),
         });
 
@@ -720,10 +800,13 @@
             const tr = document.createElement('tr');
             tr.innerHTML = `
               <td>${asset.id}</td>
-              <td>${asset.description}</td>
-              <td>${asset.quantity}</td>
-              <td>${asset.custodian}</td>
-              <td>${asset.value}</td>
+              <td>${asset.evidenceType || asset.type || 'N/A'}</td>
+              <td>${asset.description || 'N/A'}</td>
+              <td>${asset.collectionLocation || 'N/A'}</td>
+              <td>${asset.collectionDatetime ? new Date(asset.collectionDatetime).toLocaleString() : (asset.collectionDateTime ? new Date(asset.collectionDateTime).toLocaleString() : 'N/A')}</td>
+              <td>${asset.collectorAgent || 'N/A'}</td>
+              <td>${asset.evidenceStatus || asset.status || 'N/A'}</td>
+              <td>${asset.custodian || 'N/A'}</td>
             `;
             tbody.appendChild(tr);
             table.style.display = '';
@@ -786,11 +869,19 @@
         document.getElementById('add-item-id').focus();
         return;
       }
+      const evidenceType = document.getElementById('evidence-type').value;
       const description = document.getElementById('description').value;
-      const quantity = document.getElementById('quantity').value;
-      const custodian = document.getElementById('custodian').value;
-      const value = document.getElementById('value').value;
-      addAsset(itemId, description, quantity, custodian, value);
+      const collectionLocation = document.getElementById('collection-location').value;
+      const collectionDatetime = document.getElementById('collection-datetime').value;
+      const collectorAgent = document.getElementById('collector-agent').value;
+      const evidenceCondition = document.getElementById('evidence-condition').value;
+      const storageLocation = document.getElementById('storage-location').value;
+      const evidenceStatus = document.getElementById('evidence-status').value;
+      const sealNumber = document.getElementById('seal-number').value;
+      const sealType = document.getElementById('seal-type').value;
+      const sealState = document.getElementById('seal-state').value;
+      const additionalNotes = document.getElementById('additional-notes').value;
+      addAsset(itemId, evidenceType, description, collectionLocation, collectionDatetime, collectorAgent, evidenceCondition, storageLocation, evidenceStatus, sealNumber, sealType, sealState, additionalNotes);
     });
 
     document.getElementById('list-all').addEventListener('click', fetchAssets);
@@ -833,36 +924,47 @@
     });
 
     // --- EVIDÊNCIAS EM CARDS ---
+    let evidenceListVisible = false;
     document.getElementById('evidence-list-form').addEventListener('submit', async (event) => {
       event.preventDefault();
       const assetId = document.getElementById('evidence-list-asset-id').value;
-      const response = await fetch(`/api/evidence/${assetId}`);
-      const evidences = await response.json();
       const evidenceList = document.getElementById('evidence-list');
-      evidenceList.innerHTML = '';
-      if (evidences.length === 0) {
-        evidenceList.innerHTML = '<div>Nenhuma evidência encontrada.</div>';
-        return;
-      }
-      evidences.forEach(ev => {
-        const card = document.createElement('div');
-        card.className = 'evidence-card';
-        let filename = ev.filename;
-        try {
-          filename = decodeURIComponent(filename);
-        } catch (e) {
-          try {
-            filename = new TextDecoder('utf-8').decode(new Uint8Array([...filename].map(c => c.charCodeAt(0))));
-          } catch (e2) {}
+      
+      if (!evidenceListVisible) {
+        // Mostrar evidências
+        const response = await fetch(`/api/evidence/${assetId}`);
+        const evidences = await response.json();
+        evidenceList.innerHTML = '';
+        
+        if (evidences.length === 0) {
+          evidenceList.innerHTML = '<div>Nenhuma evidência encontrada.</div>';
+        } else {
+          evidences.forEach(ev => {
+            const card = document.createElement('div');
+            card.className = 'evidence-card';
+            let filename = ev.filename;
+            try {
+              filename = decodeURIComponent(filename);
+            } catch (e) {
+              try {
+                filename = new TextDecoder('utf-8').decode(new Uint8Array([...filename].map(c => c.charCodeAt(0))));
+              } catch (e2) {}
+            }
+            card.innerHTML = `
+              <span class="filename">${filename}</span>
+              <span class="hash">Hash: ${ev.hash}</span>
+              <span class="date">Data: ${new Date(ev.createdAt).toLocaleString()}</span>
+              <a href="/api/evidence/file/${ev.id}" target="_blank" class="download-btn">Download</a>
+            `;
+            evidenceList.appendChild(card);
+          });
         }
-        card.innerHTML = `
-          <span class="filename">${filename}</span>
-          <span class="hash">Hash: ${ev.hash}</span>
-          <span class="date">Data: ${new Date(ev.createdAt).toLocaleString()}</span>
-          <a href="/api/evidence/file/${ev.id}" target="_blank" class="download-btn">Download</a>
-        `;
-        evidenceList.appendChild(card);
-      });
+        evidenceListVisible = true;
+      } else {
+        // Ocultar evidências
+        evidenceList.innerHTML = '';
+        evidenceListVisible = false;
+      }
     });
 
     // --- INTEGRIDADE DE EVIDÊNCIA ---
@@ -907,6 +1009,56 @@
         div.className = 'integrity-blockchain-hashes';
         div.innerHTML = `<b>Hashes registrados na blockchain:</b><br>${data.blockchainHashes.map(h => `<div>${h}</div>`).join('')}`;
         resultList.appendChild(div);
+      }
+    });
+
+    // --- LISTAR TODAS AS EVIDÊNCIAS ---
+    let allEvidenceVisible = false;
+    document.getElementById('list-all-evidence').addEventListener('click', async () => {
+      const allEvidenceTable = document.getElementById('all-evidence-table');
+      const allEvidenceTbody = allEvidenceTable.querySelector('tbody');
+      const allEvidenceResult = document.getElementById('all-evidence-result');
+      
+      if (!allEvidenceVisible) {
+        // Mostrar a tabela
+        const response = await fetch('/api/evidence');
+        const evidences = await response.json();
+        allEvidenceTbody.innerHTML = '';
+        
+        if (evidences.length === 0) {
+          allEvidenceTable.style.display = 'none';
+          allEvidenceResult.textContent = 'Nenhuma evidência encontrada.';
+        } else {
+          evidences.forEach(ev => {
+            const tr = document.createElement('tr');
+            let filename = ev.filename;
+            try {
+              filename = decodeURIComponent(filename);
+            } catch (e) {
+              try {
+                filename = new TextDecoder('utf-8').decode(new Uint8Array([...filename].map(c => c.charCodeAt(0))));
+              } catch (e2) {}
+            }
+            tr.innerHTML = `
+              <td>${ev.id}</td>
+              <td>${ev.assetId}</td>
+              <td>${filename}</td>
+              <td>${ev.mimetype}</td>
+              <td style="font-family: monospace; font-size: 0.9em;">${ev.hash}</td>
+              <td>${new Date(ev.createdAt).toLocaleString()}</td>
+              <td><a href="/api/evidence/file/${ev.id}" target="_blank" class="download-btn">Download</a></td>
+            `;
+            allEvidenceTbody.appendChild(tr);
+          });
+          allEvidenceTable.style.display = '';
+          allEvidenceResult.textContent = '';
+        }
+        allEvidenceVisible = true;
+      } else {
+        // Ocultar a tabela
+        allEvidenceTable.style.display = 'none';
+        allEvidenceResult.textContent = '';
+        allEvidenceVisible = false;
       }
     });
 
