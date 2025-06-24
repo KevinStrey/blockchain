@@ -173,8 +173,12 @@ app.post('/api/asset/transfer-custodia', async (req, res) => {
     }
 });
 
-app.listen(port, () => {
+/*app.listen(port, () => {
     console.log(`App listening at http://localhost:${port}`);
+});*/
+
+app.listen(port, '0.0.0.0', () => {
+    console.log(`App listening at http://0.0.0.0:${port}`);
 });
 
 /**
