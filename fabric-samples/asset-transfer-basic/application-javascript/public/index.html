@@ -719,6 +719,24 @@
         document.getElementById('assets-list').innerHTML = '';
     }
 
+    // Função toggle para exibir/ocultar a lista de ativos
+    let assetsVisible = false;
+    document.getElementById('list-all').addEventListener('click', async () => {
+      const assetsTable = document.getElementById('assets-table');
+      const assetsList = document.getElementById('assets-list');
+      
+      if (!assetsVisible) {
+        // Mostrar a tabela
+        await fetchAssets();
+        assetsVisible = true;
+      } else {
+        // Ocultar a tabela
+        assetsTable.style.display = 'none';
+        assetsList.innerHTML = '';
+        assetsVisible = false;
+      }
+    });
+
     // Função toggle para exibir/ocultar a lista de custódia
     let custodiaVisible = false;
     document.getElementById('list-custodia').addEventListener('click', async () => {
@@ -883,8 +901,6 @@
       const additionalNotes = document.getElementById('additional-notes').value;
       addAsset(itemId, evidenceType, description, collectionLocation, collectionDatetime, collectorAgent, evidenceCondition, storageLocation, evidenceStatus, sealNumber, sealType, sealState, additionalNotes);
     });
-
-    document.getElementById('list-all').addEventListener('click', fetchAssets);
 
     // --- EVIDÊNCIAS ---
     document.getElementById('evidence-upload-form').addEventListener('submit', async (event) => {
