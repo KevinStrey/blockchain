@@ -353,6 +353,51 @@
       font-family: 'Fira Mono', 'Consolas', monospace;
       word-break: break-all;
     }
+    #evidence-upload-form {
+      display: flex;
+      flex-direction: row;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    #evidence-upload-form input[type="text"],
+    #evidence-upload-form input[type="file"],
+    #evidence-upload-form button {
+      height: 48px;
+      line-height: 48px;
+      box-sizing: border-box;
+    }
+    #evidence-upload-form input[type="file"] {
+      flex: 1 1 700px;
+      min-width: 400px;
+      max-width: 100%;
+      width: 100%;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+    #evidence-upload-form button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    @media (max-width: 900px) {
+      #evidence-upload-form {
+        flex-direction: column;
+        gap: 10px;
+      }
+      #evidence-upload-form input[type="file"] {
+        min-width: 0;
+        max-width: 100%;
+      }
+      #evidence-upload-form input[type="text"] {
+        min-width: 0;
+        max-width: 100%;
+      }
+      #evidence-upload-form button {
+        min-width: 0;
+        max-width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
@@ -378,6 +423,30 @@
         </form>
         <p id="add-result"></p>
       </div>
+
+      <div class="section">
+        <h2>Buscar Ativo</h2>
+        <form id="search-form">
+          <input type="text" id="item-id" placeholder="ID da Evidência" required>
+          <button type="submit">Buscar</button>
+        </form>
+        <div class="table-container">
+          <table id="search-asset-table" style="display:none;">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Descrição</th>
+                <th>Quantidade</th>
+                <th>Responsável</th>
+                <th>Valor</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p id="search-result"></p>
+      </div>
+
       <div class="section">
         <h2>Listar Todos os Ativos</h2>
         <button id="list-all">Listar Todos</button>
@@ -397,14 +466,7 @@
         </div>
         <ul id="assets-list"></ul>
       </div>
-      <div class="section">
-        <h2>Buscar Ativo</h2>
-        <form id="search-form">
-          <input type="text" id="item-id" placeholder="ID da Evidência" required>
-          <button type="submit">Buscar</button>
-        </form>
-        <p id="search-result"></p>
-      </div>
+      
     </div>
     <div id="tab-custodia" class="tab-content">
       <div class="section">
@@ -572,7 +634,27 @@
     document.getElementById('search-form').addEventListener('submit', async (event) => {
         event.preventDefault();
         const itemId = document.getElementById('item-id').value;
-        fetchAssetById(itemId);
+        const response = await fetch(`/api/asset/${itemId}`);
+        const table = document.getElementById('search-asset-table');
+        const tbody = table.querySelector('tbody');
+        tbody.innerHTML = '';
+        if (response.ok) {
+            const asset = await response.json();
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td>${asset.id}</td>
+              <td>${asset.description}</td>
+              <td>${asset.quantity}</td>
+              <td>${asset.custodian}</td>
+              <td>${asset.value}</td>
+            `;
+            tbody.appendChild(tr);
+            table.style.display = '';
+            document.getElementById('search-result').textContent = '';
+        } else {
+            table.style.display = 'none';
+            document.getElementById('search-result').textContent = 'Item não encontrado';
+        }
     });
 
     document.getElementById('transfer-form').addEventListener('submit', async (event) => {
@@ -589,22 +671,49 @@
         });
 
         if (response.ok) {
-            document.getElementById('transfer-result').textContent = 'Custódia transferida com sucesso';
+            document.getElementById('transfer-result').textContent = 'Custódia transferida com sucesso!';
+            document.getElementById('transfer-result').style.color = '#28a745';
             fetchAssets();
         } else {
             document.getElementById('transfer-result').textContent = '';
         }
     });
 
-    document.getElementById('add-form').addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const itemId = document.getElementById('add-item-id').value;
-        const description = document.getElementById('description').value;
-        const quantity = document.getElementById('quantity').value;
-        const custodian = document.getElementById('custodian').value;
-        const value = document.getElementById('value').value;
+    // Preencher automaticamente o próximo ID ao selecionar a aba 'Ativos'
+    document.querySelector('.tab[data-tab="ativos"]').addEventListener('click', async () => {
+      // Buscar todos os ativos
+      const response = await fetch('/api/assets');
+      const assets = await response.json();
+      // Encontrar o maior número de item existente
+      let maxNum = 0;
+      assets.forEach(asset => {
+        const match = asset.id.match(/^item(\d+)$/);
+        if (match) {
+          const num = parseInt(match[1]);
+          if (num > maxNum) maxNum = num;
+        }
+      });
+      // Preencher o campo com o próximo id
+      document.getElementById('add-item-id').value = `item${maxNum + 1}`;
+    });
 
-        addAsset(itemId, description, quantity, custodian, value);
+    // Verificar ID duplicado antes de adicionar novo ativo
+    document.getElementById('add-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const itemId = document.getElementById('add-item-id').value.trim();
+      // Buscar todos os ativos
+      const response = await fetch('/api/assets');
+      const assets = await response.json();
+      if (assets.some(asset => asset.id === itemId)) {
+        document.getElementById('add-result').textContent = 'ID já existe. Por favor, escolha outro ID.';
+        document.getElementById('add-item-id').focus();
+        return;
+      }
+      const description = document.getElementById('description').value;
+      const quantity = document.getElementById('quantity').value;
+      const custodian = document.getElementById('custodian').value;
+      const value = document.getElementById('value').value;
+      addAsset(itemId, description, quantity, custodian, value);
     });
 
     document.getElementById('list-all').addEventListener('click', fetchAssets);
