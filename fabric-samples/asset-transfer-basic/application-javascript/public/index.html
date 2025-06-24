@@ -112,8 +112,24 @@
     #add-form select,
     #add-form textarea,
     #add-form input[type="datetime-local"] {
-      width: 100%;
+      height: 48px;
+      line-height: 48px;
       box-sizing: border-box;
+      padding-top: 0;
+      padding-bottom: 0;
+      resize: none;
+    }
+    #add-form textarea {
+      min-height: 48px;
+      max-height: 48px;
+      overflow-y: auto;
+    }
+    #add-form .seal-row select,
+    #add-form .seal-row input[type="text"] {
+      height: 48px;
+      line-height: 48px;
+      padding-top: 0;
+      padding-bottom: 0;
     }
     #add-form > *:nth-child(odd):not(button) {
       grid-column: 1 / 2;
@@ -465,7 +481,6 @@
               <option>Metálico</option>
               <option>Adesivo</option>
               <option>Numerado</option>
-              <option>Personalizado</option>
               <option>RFID</option>
               <option>Barra de segurança</option>
               <option>Outro</option>
