@@ -246,12 +246,22 @@ app.get('/api/integrity/:assetId', async (req, res) => {
             const assetResult = await contract.evaluateTransaction('ReadIndividual', assetId);
             const asset = JSON.parse(assetResult.toString());
             const blockchainHashes = asset.evidenceHashes || [];
-            // Comparar hashes locais com os da blockchain
-            const results = localEvidences.map(ev => ({
-                filename: ev.filename,
-                hash: ev.hash,
-                inBlockchain: blockchainHashes.includes(ev.hash),
-                createdAt: ev.createdAt
+            // Para cada evidência local, buscar o arquivo e recalcular o hash
+            const results = await Promise.all(localEvidences.map(async (ev) => {
+                return new Promise((resolve) => {
+                    evidenceDB.getEvidenceFileById(ev.id, (err2, fileRow) => {
+                        let hash = null;
+                        if (!err2 && fileRow && fileRow.data) {
+                            hash = crypto.createHash('sha256').update(fileRow.data).digest('hex');
+                        }
+                        resolve({
+                            filename: ev.filename,
+                            hash,
+                            inBlockchain: hash ? blockchainHashes.includes(hash) : false,
+                            createdAt: ev.createdAt
+                        });
+                    });
+                });
             }));
             return res.status(200).json({ results, blockchainHashes });
         } catch (bcErr) {
@@ -332,5 +342,5 @@ async function main() {
 }
 
 
-main();
+//main();
 
