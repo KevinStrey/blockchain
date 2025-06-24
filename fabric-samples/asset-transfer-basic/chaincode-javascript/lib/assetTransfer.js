@@ -224,11 +224,7 @@ class AssetTransfer extends Contract {
 
     // Cria um novo registro de transferência quando a custódia de um ativo é transferida.
     async createTransferRecord(ctx, itemId, newCustodian, transactionType) {
-        // Converte o timestamp para UTC-3 (horário de Brasília)
-        const utcTimestamp = (await ctx.stub.getTxTimestamp()).seconds.low * 1000;
-        const brasiliaDate = new Date(utcTimestamp - (3 * 60 * 60 * 1000)); // Subtrai 3 horas para UTC-3
-        const timestamp = brasiliaDate.toISOString();
-        
+        const timestamp = new Date((await ctx.stub.getTxTimestamp()).seconds.low * 1000).toISOString();
         const transferRecord = {
             itemId,
             custodian: newCustodian,

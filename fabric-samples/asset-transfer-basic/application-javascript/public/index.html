@@ -969,7 +969,7 @@
             card.innerHTML = `
               <span class="filename">${filename}</span>
               <span class="hash">Hash: ${ev.hash}</span>
-              <span class="date">Data: ${new Date(ev.createdAt).toLocaleString()}</span>
+              <span class="date">Data: ${new Date(new Date(ev.createdAt).getTime() - (3 * 60 * 60 * 1000)).toLocaleString()}</span>
               <a href="/api/evidence/file/${ev.id}" target="_blank" class="download-btn">Download</a>
             `;
             evidenceList.appendChild(card);
@@ -1013,7 +1013,7 @@
         card.innerHTML = `
           <span class="filename">${filename}</span>
           <span class="hash">Hash: ${ev.hash}</span>
-          <span class="date">Data: ${new Date(ev.createdAt).toLocaleString()}</span>
+          <span class="date">Data: ${new Date(new Date(ev.createdAt).getTime() - (3 * 60 * 60 * 1000)).toLocaleString()}</span>
           <span class="${ev.inBlockchain ? 'integrity-ok' : 'integrity-fail'}">
             ${ev.inBlockchain ? '✔️ Integridade OK' : '❌ NÃO registrado na blockchain'}
           </span>
@@ -1061,7 +1061,7 @@
               <td>${filename}</td>
               <td>${ev.mimetype}</td>
               <td style="font-family: monospace; font-size: 0.9em;">${ev.hash}</td>
-              <td>${new Date(ev.createdAt).toLocaleString()}</td>
+              <td>${new Date(new Date(ev.createdAt).getTime() - (3 * 60 * 60 * 1000)).toLocaleString()}</td>
               <td><a href="/api/evidence/file/${ev.id}" target="_blank" class="download-btn">Download</a></td>
             `;
             allEvidenceTbody.appendChild(tr);
