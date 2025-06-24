@@ -181,7 +181,7 @@ app.post('/api/asset/transfer-custodia', async (req, res) => {
 });
 
 // Rota para upload de evidência
-app.post('/api/evidence/upload', upload.single('file'), (req, res) => {
+app.post('/api/evidence/upload', upload.single('file'), async (req, res) => {
     const { assetId } = req.body;
     const file = req.file;
     if (!assetId || !file) {
@@ -189,11 +189,20 @@ app.post('/api/evidence/upload', upload.single('file'), (req, res) => {
     }
     // Gera hash do arquivo
     const hash = crypto.createHash('sha256').update(file.buffer).digest('hex');
-    evidenceDB.insertEvidence(assetId, file.originalname, file.mimetype, file.buffer, hash, (err, id) => {
+    evidenceDB.insertEvidence(assetId, file.originalname, file.mimetype, file.buffer, hash, async (err, id) => {
         if (err) {
             return res.status(500).json({ error: 'Erro ao salvar evidência.' });
         }
-        res.status(200).json({ message: 'Evidência salva com sucesso.', id, hash });
+        // Chama o chaincode para registrar o hash no asset
+        try {
+            const gateway = await getGateway();
+            const network = await gateway.getNetwork(channelName);
+            const contract = network.getContract(chaincodeName);
+            await contract.submitTransaction('AddEvidenceHash', assetId, hash);
+        } catch (ccErr) {
+            return res.status(500).json({ error: 'Evidência salva localmente, mas falha ao registrar hash na blockchain: ' + ccErr.toString() });
+        }
+        res.status(200).json({ message: 'Evidência salva com sucesso e hash registrado na blockchain.', id, hash });
     });
 });
 
@@ -218,6 +227,36 @@ app.get('/api/evidence/file/:id', (req, res) => {
         res.setHeader('Content-Disposition', `attachment; filename="${file.filename}"`);
         res.setHeader('Content-Type', file.mimetype);
         res.send(file.data);
+    });
+});
+
+// Endpoint para consultar integridade das evidências de um asset
+app.get('/api/integrity/:assetId', async (req, res) => {
+    const assetId = req.params.assetId;
+    // Buscar evidências locais
+    evidenceDB.getEvidencesByAsset(assetId, async (err, localEvidences) => {
+        if (err) {
+            return res.status(500).json({ error: 'Erro ao buscar evidências locais.' });
+        }
+        // Buscar asset na blockchain
+        try {
+            const gateway = await getGateway();
+            const network = await gateway.getNetwork(channelName);
+            const contract = network.getContract(chaincodeName);
+            const assetResult = await contract.evaluateTransaction('ReadIndividual', assetId);
+            const asset = JSON.parse(assetResult.toString());
+            const blockchainHashes = asset.evidenceHashes || [];
+            // Comparar hashes locais com os da blockchain
+            const results = localEvidences.map(ev => ({
+                filename: ev.filename,
+                hash: ev.hash,
+                inBlockchain: blockchainHashes.includes(ev.hash),
+                createdAt: ev.createdAt
+            }));
+            return res.status(200).json({ results, blockchainHashes });
+        } catch (bcErr) {
+            return res.status(500).json({ error: 'Erro ao buscar asset na blockchain: ' + bcErr.toString() });
+        }
     });
 });
 

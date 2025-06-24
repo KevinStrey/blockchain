@@ -80,6 +80,7 @@ class AssetTransfer extends Contract {
             quantity,
             custodian,
             value,
+            evidenceHashes: [],
         };
 
         await ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(asset))));
@@ -170,6 +171,18 @@ class AssetTransfer extends Contract {
     async itemExists(ctx, id) {
         const itemJSON = await ctx.stub.getState(id);
         return itemJSON && itemJSON.length > 0;
+    }
+
+    // Adiciona um novo hash de evidência ao asset
+    async AddEvidenceHash(ctx, id, hash) {
+        const itemString = await this.ReadIndividual(ctx, id);
+        const item = JSON.parse(itemString);
+        if (!item.evidenceHashes) {
+            item.evidenceHashes = [];
+        }
+        item.evidenceHashes.push(hash);
+        await ctx.stub.putState(id, Buffer.from(stringify(sortKeysRecursive(item))));
+        return JSON.stringify(item);
     }
 }
 
