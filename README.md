@@ -1,6 +1,7 @@
 # Projeto de Blockchain
 
-## Vídeo explicativo da Blockchain: [https://youtu.be/yZigj3eHlgE]
+## Como rodar a Blockchain: [https://youtu.be/tJyyhH30OMQ](https://youtu.be/tJyyhH30OMQ)
+## Apresentaçao do App: [https://youtu.be/tJyyhH30OMQ](https://youtu.be/17p6xxu0J-Q)
 
 ## Iniciar a Blockchain
 1. Acesse o diretório da rede de teste:
