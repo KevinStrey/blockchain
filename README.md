@@ -23,6 +23,7 @@ hyperledger/fabric-samples/asset-transfer-basic/application-javascript
   sudo su
   npm install
   npm install express
+  rm -rf wallet
   node app.js
   ```
 
